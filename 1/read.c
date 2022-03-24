@@ -27,7 +27,8 @@ int main(int argc, char *argv[]){
 
     offset=atoi(argv[1]);
     r_byte=atoi(argv[2]);
-    lseek(fd,(off_t)(offset+r_byte),SEEK_SET);
+    if(r_byte<0) lseek(fd,(off_t)(offset+r_byte),SEEK_SET);
+    else lseek(fd,(off_t)offset,SEEK_SET);
     r_byte=abs(r_byte);
 
     while(read(fd,&c,1)>0&&r_byte>0){
