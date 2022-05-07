@@ -10,6 +10,7 @@
 
 AddrMapTbl addrmaptbl;
 extern FILE *devicefp;
+SpareData sparedata[PAGES_PER_BLOCK];
 
 /****************  prototypes ****************/
 void ftl_open();
@@ -35,6 +36,8 @@ void ftl_open()
 	//
 	// 추가적으로 필요한 작업이 있으면 수행하면 되고 없으면 안해도 무방함
 	//
+	for(i=0;i<PAGES_PER_BLOCK;i++)
+		sparedata[i].lsn=-1;
 
 	return;
 }
@@ -57,8 +60,8 @@ void ftl_write(int lsn, char *sectorbuf)
 	//
 	int reserved_empty_blk = DATABLKS_PER_DEVICE;
 	char tempbuf[PAGE_SIZE];
-	int lbn=lsn/4;
-	int offset=lsn%4;
+	int lbn=lsn/PAGES_PER_BLOCK;
+	int offset=lsn%PAGES_PER_BLOCK;
 	int i;
 	int pbn;
 	int ppn;
@@ -78,29 +81,35 @@ void ftl_write(int lsn, char *sectorbuf)
 		}
 	}
 	pbn=i;
-	ppn=pbn*4+offset;
+	ppn=pbn*PAGES_PER_BLOCK+offset;
 	addrmaptbl.pbn[pbn]=lbn;
 
-	//out-of-place update
-	if(dd_read(ppn,tempbuf)){
+	//write
+	if(sparedata[ppn].lsn==-1)
+		dd_write(ppn,sectorbuf);
+	else{
+		printf("hello\n");
 		while(addrmaptbl.pbn[reserved_empty_blk]==-2)
 			reserved_empty_blk--;
-		for(i=0;i<4;i++){
+		for(i=0;i<PAGES_PER_BLOCK;i++){
 			if(offset==i)
 				break;
-			if(dd_read(pbn*4+i,tempbuf))
+			if(sparedata[pbn*PAGES_PER_BLOCK+i].lsn==-1){
+				dd_read(pbn*PAGES_PER_BLOCK+i,tempbuf);
 				dd_write(reserved_empty_blk+i,tempbuf);
+			}
 		}
 		dd_write(reserved_empty_blk+offset,sectorbuf);
 		dd_erase(pbn);
-		for(i=0;i<4;i++){
-			if(dd_read(reserved_empty_blk+i,tempbuf))
-				dd_write(pbn*4+i,tempbuf);
+		for(i=0;i<PAGES_PER_BLOCK;i++){
+			if(sparedata[pbn*PAGES_PER_BLOCK+i].lsn==-1){
+				dd_read(reserved_empty_blk+i,tempbuf);
+				dd_write(pbn*PAGES_PER_BLOCK+i,tempbuf);
+			}
 		}
 		addrmaptbl.pbn[reserved_empty_blk]=-2;
 	}
-	else
-		dd_write(ppn,sectorbuf);
+	sparedata[ppn].lsn=lsn;
 	return;
 }
 
@@ -114,8 +123,8 @@ void ftl_read(int lsn, char *sectorbuf)
 	print_addrmaptbl_info();
 #endif
 
-	int lbn=lsn/4;
-	int offset=lsn%4;
+	int lbn=lsn/PAGES_PER_BLOCK;
+	int offset=lsn%PAGES_PER_BLOCK;
 	int i;
 	int pbn;
 	int ppn;
@@ -131,7 +140,7 @@ void ftl_read(int lsn, char *sectorbuf)
          fprintf(stderr,"can't read\n");
      }   
 	pbn=i;
-	ppn=pbn*4+offset;
+	ppn=pbn*PAGES_PER_BLOCK+offset;
 	dd_read(ppn,sectorbuf);
 
 	return;
