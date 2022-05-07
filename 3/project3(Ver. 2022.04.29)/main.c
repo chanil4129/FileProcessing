@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include "blkmap.h"
+#include <string.h>
 
 FILE *devicefp;
 
@@ -39,6 +40,17 @@ int main( )
 	// 채점할 때 이 부분에 테스트 코드를 심어서 합니다. Flash memory에 대한 데이터의 읽기 및 쓰기가
 	// 올바르게 동작하는지를 테스트하고, 필요하면 다른 부분도 검사를 합니다.
 	//
+	strcpy(sectorbuf,"a");
+	print_addrmaptbl_info();
+	ftl_write(9,sectorbuf);
+	ftl_read(9,sectorbuf);
+	strcpy(sectorbuf,"b");
+	ftl_write(10,sectorbuf);
+	ftl_read(10,sectorbuf);
+	print_block(0);
+	print_addrmaptbl_info();
+
+	
 
 	free(blockbuf);
 	fclose(devicefp);

@@ -8,7 +8,7 @@
 #include <time.h>
 #include "blkmap.h"
 
-AddrMapTable addrmaptbl;
+AddrMapTbl addrmaptbl;
 extern FILE *devicefp;
 
 /****************  prototypes ****************/
@@ -16,7 +16,7 @@ void ftl_open();
 void ftl_write(int lsn, char *sectorbuf);
 void ftl_read(int lsn, char *sectorbuf);
 void print_block(int pbn);
-void print_addrmaptbl();
+void print_addrmaptbl_info();
 
 //
 // flash memory를 처음 사용할 때 필요한 초기화 작업, 예를 들면 address mapping table에 대한
@@ -43,7 +43,7 @@ void ftl_open()
 // file system을 위한 FTL이 제공하는 write interface
 // 'sectorbuf'가 가리키는 메모리의 크기는 'SECTOR_SIZE'이며, 호출하는 쪽에서 미리 메모리를 할당받아야 함
 //
-void ftl_write(int lsn, char *sectorbuf);
+void ftl_write(int lsn, char *sectorbuf)
 {
 #ifdef PRINT_FOR_DEBUG			// 필요 시 현재의 block mapping table을 출력해 볼 수 있음
 	print_addrmaptbl_info();
@@ -56,8 +56,51 @@ void ftl_write(int lsn, char *sectorbuf);
 	// 따라서 reserved_empty_blk는 고정되어 있는 것이 아니라 상황에 따라 계속 바뀔 수 있음
 	//
 	int reserved_empty_blk = DATABLKS_PER_DEVICE;
+	char tempbuf[PAGE_SIZE];
+	int lbn=lsn/4;
+	int offset=lsn%4;
+	int i;
+	int pbn;
+	int ppn;
 
+	//logical, physical mapping
+	for(i=0;i<DATABLKS_PER_DEVICE;i++){
+		if(addrmaptbl.pbn[i]==lbn)
+			break;
+	}
+	if(i==DATABLKS_PER_DEVICE){
+		i=0;
+		while(i<DATABLKS_PER_DEVICE&&addrmaptbl.pbn[i]!=-1)
+			i++;
+		if(i==DATABLKS_PER_DEVICE){
+			fprintf(stderr,"space lack\n");
+			return;
+		}
+	}
+	pbn=i;
+	ppn=pbn*4+offset;
+	addrmaptbl.pbn[pbn]=lbn;
 
+	//out-of-place update
+	if(dd_read(ppn,tempbuf)){
+		while(addrmaptbl.pbn[reserved_empty_blk]==-2)
+			reserved_empty_blk--;
+		for(i=0;i<4;i++){
+			if(offset==i)
+				break;
+			if(dd_read(pbn*4+i,tempbuf))
+				dd_write(reserved_empty_blk+i,tempbuf);
+		}
+		dd_write(reserved_empty_blk+offset,sectorbuf);
+		dd_erase(pbn);
+		for(i=0;i<4;i++){
+			if(dd_read(reserved_empty_blk+i,tempbuf))
+				dd_write(pbn*4+i,tempbuf);
+		}
+		addrmaptbl.pbn[reserved_empty_blk]=-2;
+	}
+	else
+		dd_write(ppn,sectorbuf);
 	return;
 }
 
@@ -65,11 +108,31 @@ void ftl_write(int lsn, char *sectorbuf);
 // file system을 위한 FTL이 제공하는 read interface
 // 'sectorbuf'가 가리키는 메모리의 크기는 'SECTOR_SIZE'이며, 호출하는 쪽에서 미리 메모리를 할당받아야 함
 // 
-void ftl_read(int lsn, char *sectorbuf);
+void ftl_read(int lsn, char *sectorbuf)
 {
 #ifdef PRINT_FOR_DEBUG			// 필요 시 현재의 block mapping table을 출력해 볼 수 있음
 	print_addrmaptbl_info();
 #endif
+
+	int lbn=lsn/4;
+	int offset=lsn%4;
+	int i;
+	int pbn;
+	int ppn;
+
+	for(i=0;i<DATABLKS_PER_DEVICE;i++){
+		if(addrmaptbl.pbn[i]==lbn)
+			break;
+	}
+	if(i==DATABLKS_PER_DEVICE){
+         i=0;
+         while(addrmaptbl.pbn[i]!=-1||i!=DATABLKS_PER_DEVICE)
+             i++;
+         fprintf(stderr,"can't read\n");
+     }   
+	pbn=i;
+	ppn=pbn*4+offset;
+	dd_read(ppn,sectorbuf);
 
 	return;
 }
@@ -104,7 +167,7 @@ void print_block(int pbn)
 //
 // for debugging
 //
-void print_addrmaptbl()
+void print_addrmaptbl_info()
 {
 	int i;
 
