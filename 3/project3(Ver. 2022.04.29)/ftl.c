@@ -45,10 +45,6 @@ void ftl_open()
 //
 void ftl_write(int lsn, char *sectorbuf)
 {
-#ifdef PRINT_FOR_DEBUG			// 필요 시 현재의 block mapping table을 출력해 볼 수 있음
-	print_addrmaptbl_info();
-#endif
-
 	//
 	// block mapping 기법에서 overwrite가 발생하면 이를 해결하기 위해 반드시 하나의 empty block이
 	// 필요하며, 초기값은 flash memory에서 맨 마지막 block number를 사용함
@@ -123,10 +119,6 @@ void ftl_write(int lsn, char *sectorbuf)
 // 
 void ftl_read(int lsn, char *sectorbuf)
 {
-#ifdef PRINT_FOR_DEBUG			// 필요 시 현재의 block mapping table을 출력해 볼 수 있음
-	print_addrmaptbl_info();
-#endif
-
 	int lbn=lsn/PAGES_PER_BLOCK;
 	int offset=lsn%PAGES_PER_BLOCK;
 	int pbn=addrmaptbl.pbn[lbn];
