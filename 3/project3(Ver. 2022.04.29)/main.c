@@ -57,6 +57,8 @@ int main( )
 	ftl_write(50,sectorbuf);
 	strcpy(sectorbuf,"abcd");
 	ftl_write(160,sectorbuf);
+	strcpy(sectorbuf,"qwer");
+	ftl_write(200,sectorbuf);
 	ftl_read(9,sectorbuf);
 	printf("sectorbuf : %s\n",sectorbuf);
 	ftl_read(10,sectorbuf);

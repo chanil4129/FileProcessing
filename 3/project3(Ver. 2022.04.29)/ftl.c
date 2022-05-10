@@ -67,12 +67,13 @@ void ftl_write(int lsn, char *sectorbuf)
 	pagebuf=(char *)malloc(PAGE_SIZE);
 	sdata=(SpareData *)malloc(SPARE_SIZE);
 
+	//mapping
 	i=0;
 	if(pbn==-1){
 		for(int j=0;j<DATABLKS_PER_DEVICE;j++){
 			if(addrmaptbl.pbn[j]==i){
 				i++;
-				j=0;
+				j=-1;
 			}
 		}
 		addrmaptbl.pbn[lbn]=i;
@@ -94,7 +95,7 @@ void ftl_write(int lsn, char *sectorbuf)
 		for(int j=0;j<DATABLKS_PER_DEVICE;j++){
 			if(addrmaptbl.pbn[j]==reserved_empty_blk){
 				reserved_empty_blk--;
-				j=0;
+				j=-1;
 			}
 		}
 				
