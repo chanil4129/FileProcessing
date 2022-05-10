@@ -86,9 +86,7 @@ void ftl_write(int lsn, char *sectorbuf)
 	
 	//write
 	if(sdata->lsn==-1)
-	{
 		dd_write(ppn,sectorbuf);
-	}
 	//overwrite
 	else{
 		reserved_empty_blk--;
@@ -134,6 +132,10 @@ void ftl_read(int lsn, char *sectorbuf)
 	int pbn=addrmaptbl.pbn[lbn];
 	int ppn=pbn*PAGES_PER_BLOCK+offset;
 
+	if(pbn==-1){
+		fprintf(stderr,"read error\n");
+		return;
+	}
 	dd_read(ppn,sectorbuf);
 
 	return;

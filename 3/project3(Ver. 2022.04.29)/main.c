@@ -68,13 +68,17 @@ int main( )
 	ftl_read(50,sectorbuf);
 	printf("sectorbuf : %s\n",sectorbuf);
 	ftl_read(160,sectorbuf);
+	ftl_read(400,sectorbuf);
+	printf("sectorbuf : %s\n",sectorbuf);
 	printf("sectorbuf : %s\n",sectorbuf);
 	print_block(0);
 	print_block(1022);
 	print_addrmaptbl_info();
+	/*
 	for(int t=0;t<1200;t++){
 		ftl_write(160,sectorbuf);
 	}
+	*/
 	ftl_read(160,sectorbuf);
 	printf("sectorbuf : %s\n",sectorbuf);
 
