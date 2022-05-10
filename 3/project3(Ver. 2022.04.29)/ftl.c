@@ -10,7 +10,6 @@
 
 AddrMapTbl addrmaptbl;
 extern FILE *devicefp;
-SpareData sparedata[PAGES_PER_BLOCK];
 
 /****************  prototypes ****************/
 void ftl_open();
@@ -36,8 +35,6 @@ void ftl_open()
 	//
 	// 추가적으로 필요한 작업이 있으면 수행하면 되고 없으면 안해도 무방함
 	//
-	for(i=0;i<PAGES_PER_BLOCK;i++)
-		sparedata[i].lsn=-1;
 
 	return;
 }
@@ -59,57 +56,65 @@ void ftl_write(int lsn, char *sectorbuf)
 	// 따라서 reserved_empty_blk는 고정되어 있는 것이 아니라 상황에 따라 계속 바뀔 수 있음
 	//
 	int reserved_empty_blk = DATABLKS_PER_DEVICE;
-	char tempbuf[PAGE_SIZE];
 	int lbn=lsn/PAGES_PER_BLOCK;
 	int offset=lsn%PAGES_PER_BLOCK;
-	int i;
-	int pbn;
+	int pbn=addrmaptbl.pbn[lbn];
 	int ppn;
+	int i;
+	char *pagebuf;
+	SpareData *sdata;
+	
+	pagebuf=(char *)malloc(PAGE_SIZE);
+	sdata=(SpareData *)malloc(SPARE_SIZE);
 
-	//logical, physical mapping
-	for(i=0;i<DATABLKS_PER_DEVICE;i++){
-		if(addrmaptbl.pbn[i]==lbn)
-			break;
-	}
-	if(i==DATABLKS_PER_DEVICE){
-		i=0;
-		while(i<DATABLKS_PER_DEVICE&&addrmaptbl.pbn[i]!=-1)
-			i++;
-		if(i==DATABLKS_PER_DEVICE){
-			fprintf(stderr,"space lack\n");
-			return;
+	i=0;
+	if(pbn==-1){
+		for(int j=0;j<DATABLKS_PER_DEVICE;j++){
+			if(addrmaptbl.pbn[j]==i){
+				i++;
+				j=0;
+			}
 		}
+		addrmaptbl.pbn[lbn]=i;
+		pbn=addrmaptbl.pbn[lbn];
 	}
-	pbn=i;
 	ppn=pbn*PAGES_PER_BLOCK+offset;
-	addrmaptbl.pbn[pbn]=lbn;
 
+	dd_read(pbn*PAGES_PER_BLOCK+offset,pagebuf);
+	memcpy(sdata,pagebuf+SECTOR_SIZE,SPARE_SIZE);
+	
 	//write
-	if(sparedata[ppn].lsn==-1)
+	if(sdata->lsn==-1)
+	{
 		dd_write(ppn,sectorbuf);
+	}
+	//overwrite
 	else{
-		printf("hello\n");
-		while(addrmaptbl.pbn[reserved_empty_blk]==-2)
-			reserved_empty_blk--;
+		reserved_empty_blk--;
+		for(int j=0;j<DATABLKS_PER_DEVICE;j++){
+			if(addrmaptbl.pbn[j]==reserved_empty_blk){
+				reserved_empty_blk--;
+				j=0;
+			}
+		}
+				
 		for(i=0;i<PAGES_PER_BLOCK;i++){
 			if(offset==i)
-				break;
-			if(sparedata[pbn*PAGES_PER_BLOCK+i].lsn==-1){
-				dd_read(pbn*PAGES_PER_BLOCK+i,tempbuf);
-				dd_write(reserved_empty_blk+i,tempbuf);
-			}
+				continue;
+			dd_read(pbn*PAGES_PER_BLOCK+i,pagebuf);
+			dd_write(reserved_empty_blk*PAGES_PER_BLOCK+i,pagebuf);
 		}
-		dd_write(reserved_empty_blk+offset,sectorbuf);
+		dd_write(reserved_empty_blk*PAGES_PER_BLOCK+offset,sectorbuf);
 		dd_erase(pbn);
-		for(i=0;i<PAGES_PER_BLOCK;i++){
-			if(sparedata[pbn*PAGES_PER_BLOCK+i].lsn==-1){
-				dd_read(reserved_empty_blk+i,tempbuf);
-				dd_write(pbn*PAGES_PER_BLOCK+i,tempbuf);
-			}
-		}
-		addrmaptbl.pbn[reserved_empty_blk]=-2;
+		addrmaptbl.pbn[lbn]=reserved_empty_blk;
 	}
-	sparedata[ppn].lsn=lsn;
+	
+	sdata->lsn=lsn;
+	memcpy(pagebuf+SECTOR_SIZE,sdata,SPARE_SIZE);
+
+	free(pagebuf);
+	free(sdata);
+
 	return;
 }
 
@@ -125,22 +130,9 @@ void ftl_read(int lsn, char *sectorbuf)
 
 	int lbn=lsn/PAGES_PER_BLOCK;
 	int offset=lsn%PAGES_PER_BLOCK;
-	int i;
-	int pbn;
-	int ppn;
+	int pbn=addrmaptbl.pbn[lbn];
+	int ppn=pbn*PAGES_PER_BLOCK+offset;
 
-	for(i=0;i<DATABLKS_PER_DEVICE;i++){
-		if(addrmaptbl.pbn[i]==lbn)
-			break;
-	}
-	if(i==DATABLKS_PER_DEVICE){
-         i=0;
-         while(addrmaptbl.pbn[i]!=-1||i!=DATABLKS_PER_DEVICE)
-             i++;
-         fprintf(stderr,"can't read\n");
-     }   
-	pbn=i;
-	ppn=pbn*PAGES_PER_BLOCK+offset;
 	dd_read(ppn,sectorbuf);
 
 	return;
@@ -162,7 +154,7 @@ void print_block(int pbn)
 
 	for(i = pbn*PAGES_PER_BLOCK; i < (pbn+1)*PAGES_PER_BLOCK; i++)
 	{
-		read(i, pagebuf);
+		dd_read(i, pagebuf);
 		memcpy(sdata, pagebuf+SECTOR_SIZE, SPARE_SIZE);
 		printf("\t   %5d-[%7d]\n", i, sdata->lsn);
 	}

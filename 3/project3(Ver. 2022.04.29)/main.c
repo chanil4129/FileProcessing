@@ -47,16 +47,35 @@ int main( )
 	ftl_write(9,sectorbuf);
 	strcpy(sectorbuf,"bc");
 	ftl_write(10,sectorbuf);
+	strcpy(sectorbuf,"modi");
+	ftl_write(10,sectorbuf);
 	strcpy(sectorbuf,"cde");
 	ftl_write(100,sectorbuf);
+	strcpy(sectorbuf,"hi");
+	ftl_write(50,sectorbuf);
+	strcpy(sectorbuf,"ttt");
+	ftl_write(50,sectorbuf);
+	strcpy(sectorbuf,"abcd");
+	ftl_write(160,sectorbuf);
 	ftl_read(9,sectorbuf);
 	printf("sectorbuf : %s\n",sectorbuf);
 	ftl_read(10,sectorbuf);
 	printf("sectorbuf : %s\n",sectorbuf);
 	ftl_read(100,sectorbuf);
 	printf("sectorbuf : %s\n",sectorbuf);
+	ftl_read(50,sectorbuf);
+	printf("sectorbuf : %s\n",sectorbuf);
+	ftl_read(160,sectorbuf);
+	printf("sectorbuf : %s\n",sectorbuf);
 	print_block(0);
+	print_block(1022);
 	print_addrmaptbl_info();
+	for(int t=0;t<1200;t++){
+		ftl_write(160,sectorbuf);
+	}
+	ftl_read(160,sectorbuf);
+	printf("sectorbuf : %s\n",sectorbuf);
+
 
 	
 
