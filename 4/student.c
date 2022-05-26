@@ -98,23 +98,16 @@ void main(int argc, char *argv[]){
 int readRecord(FILE *fp, STUDENT *s, int rrn){
 	char recordbuf[RECORD_SIZE];
 	long offset;
-	int fd;
 
-	fd=fileno(fp);
 	offset=rrn*RECORD_SIZE+HEADER_SIZE;
-	/*
-	if(lseek(fd,offset,SEEK_SET)<0){
-		printf("seek error\n");
+	if(fseek(fp,offset,SEEK_SET)!=0){
+		fprintf(stderr,"seek error\n");
 		return 0;
 	}
-	if(read(fd,recordbuf,HEADER_SIZE)<0){
-		printf("read error\n");
+	if(fread(recordbuf,sizeof(recordbuf),1,fp)!=1){
+		fprintf(stderr,"read error\n");
 		return 0;
 	}
-	*/
-	fseek(fp,offset,SEEK_SET);
-//	fscanf(fp,"%s",recordbuf);
-	fread(recordbuf,sizeof(recordbuf),1,fp);
 	unpack(recordbuf,s);
 	return 1;
 }
@@ -135,17 +128,15 @@ void unpack(const char *recordbuf, STUDENT *s){
 int writeRecord(FILE *fp, const STUDENT *s, int rrn){
 	char recordbuf[RECORD_SIZE];
 	long offset;
-	int fd;
 
-	fd=fileno(fp);
 	pack(recordbuf,s);
 	offset=HEADER_SIZE+rrn*RECORD_SIZE;
-	if(lseek(fd,offset,SEEK_SET)<0){
-		printf("seek error\n");
+	if(fseek(fp,offset,SEEK_SET)!=0){
+		fprintf(stderr,"seek error\n");
 		return 0;
 	}
-	if(write(fd,recordbuf,RECORD_SIZE)<0){
-		printf("write error\n");
+	if(fwrite(recordbuf,sizeof(recordbuf),1,fp)!=1){
+		fprintf(stderr,"write error\n");
 		return 0;
 	}
 
@@ -200,6 +191,7 @@ int appendRecord(FILE *fp, char *id, char *name, char *dept, char *addr, char *e
 		printf("writeRecord error\n");
 		return 0;
 	}
+	return 1;
 }
 
 void searchRecord(FILE *fp, enum FIELD f, char *keyval){
