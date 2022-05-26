@@ -102,6 +102,7 @@ int readRecord(FILE *fp, STUDENT *s, int rrn){
 
 	fd=fileno(fp);
 	offset=rrn*RECORD_SIZE+HEADER_SIZE;
+	/*
 	if(lseek(fd,offset,SEEK_SET)<0){
 		printf("seek error\n");
 		return 0;
@@ -110,20 +111,25 @@ int readRecord(FILE *fp, STUDENT *s, int rrn){
 		printf("read error\n");
 		return 0;
 	}
+	*/
+	fseek(fp,offset,SEEK_SET);
+//	fscanf(fp,"%s",recordbuf);
+	fread(recordbuf,sizeof(recordbuf),1,fp);
 	unpack(recordbuf,s);
-	for(int i=0;i<HEADER_SIZE;i++){
-		printf("%c",recordbuf[i]);
-	}
-	printf("\n");
 	return 1;
 }
 
 void unpack(const char *recordbuf, STUDENT *s){
 	memcpy(s->id,recordbuf,IL);
+	s->id[IL]='\0';
 	memcpy(s->name,recordbuf+1+IL,NL);
+	s->name[NL]='\0';
 	memcpy(s->dept,recordbuf+2+IL+NL,DL);
+	s->dept[DL]='\0';
 	memcpy(s->addr,recordbuf+3+IL+NL+DL,AL);
+	s->addr[AL]='\0';
 	memcpy(s->email,recordbuf+4+IL+NL+DL+AL,EL);
+	s->email[EL]='\0';
 }
 
 int writeRecord(FILE *fp, const STUDENT *s, int rrn){
@@ -182,13 +188,6 @@ int appendRecord(FILE *fp, char *id, char *name, char *dept, char *addr, char *e
 	lseek(fd,0,SEEK_SET);
 	write(fd,headbuf,HEADER_SIZE);
 
-	//" " 없애기
-	strtok(id,"\"");
-	strtok(name,"\"");
-	strtok(dept,"\"");
-	strtok(addr,"\"");
-	strtok(email,"\"");
-
 	//구조체에 데이터 삽입
 	strcpy(s.id,id);
 	strcpy(s.name,name);
@@ -210,10 +209,11 @@ void searchRecord(FILE *fp, enum FIELD f, char *keyval){
 	int eof;
 	int fd;
 
+	keyval=strstr(keyval,"=")+1;
 	fd=fileno(fp);
 	eof=lseek(fd,0,SEEK_END);
 	lseek(fd,0,SEEK_SET);
-	while(lseek(fd,0,SEEK_CUR)<eof){
+	for(int i=HEADER_SIZE;i<eof;i+=RECORD_SIZE){
 		if(!readRecord(fp,&s,rrn)){
 			printf("none data\n");
 			return;
