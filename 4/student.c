@@ -1,56 +1,244 @@
-#include <stdio.h>		// ÇÊ¿äÇÑ header file Ãß°¡ °¡´É
+#include <stdio.h>		// ï¿½Ê¿ï¿½ï¿½ï¿½ header file ï¿½ß°ï¿½ ï¿½ï¿½ï¿½ï¿½
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include "student.h"
 
 //
-// ÇÔ¼ö readRecord()´Â ÇÐ»ý ·¹ÄÚµå ÆÄÀÏ¿¡¼­ ÁÖ¾îÁø rrn¿¡ ÇØ´çÇÏ´Â ·¹ÄÚµå¸¦ ÀÐ¾î¼­ 
-// recordbuf¿¡ ÀúÀåÇÏ°í, ÀÌÈÄ unpack() ÇÔ¼ö¸¦ È£ÃâÇÏ¿© ÇÐ»ý Å¸ÀÔÀÇ º¯¼ö¿¡ ·¹ÄÚµåÀÇ
-// °¢ ÇÊµå°ªÀ» ÀúÀåÇÑ´Ù. ¼º°øÇÏ¸é 1À» ±×·¸Áö ¾ÊÀ¸¸é 0À» ¸®ÅÏÇÑ´Ù.
-// unpack() ÇÔ¼ö´Â recordbuf¿¡ ÀúÀåµÇ¾î ÀÖ´Â record¿¡¼­ °¢ field¸¦ ÃßÃâÇÏ´Â ÀÏÀ» ÇÑ´Ù.
+// ï¿½Ô¼ï¿½ readRecord()ï¿½ï¿½ ï¿½Ð»ï¿½ ï¿½ï¿½ï¿½Úµï¿½ ï¿½ï¿½ï¿½Ï¿ï¿½ï¿½ï¿½ ï¿½Ö¾ï¿½ï¿½ï¿½ rrnï¿½ï¿½ ï¿½Ø´ï¿½ï¿½Ï´ï¿½ ï¿½ï¿½ï¿½Úµå¸¦ ï¿½Ð¾î¼­ 
+// recordbufï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï°ï¿½, ï¿½ï¿½ï¿½ï¿½ unpack() ï¿½Ô¼ï¿½ï¿½ï¿½ È£ï¿½ï¿½ï¿½Ï¿ï¿½ ï¿½Ð»ï¿½ Å¸ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Úµï¿½ï¿½ï¿½
+// ï¿½ï¿½ ï¿½Êµå°ªï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ñ´ï¿½. ï¿½ï¿½ï¿½ï¿½ï¿½Ï¸ï¿½ 1ï¿½ï¿½ ï¿½×·ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 0ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ñ´ï¿½.
+// unpack() ï¿½Ô¼ï¿½ï¿½ï¿½ recordbufï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ç¾ï¿½ ï¿½Ö´ï¿½ recordï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ fieldï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ñ´ï¿½.
 //
-int readRecord((FILE *fp, STUDENT *s, int rrn);
+int readRecord(FILE *fp, STUDENT *s, int rrn);
 void unpack(const char *recordbuf, STUDENT *s);
 
 //
-// ÇÔ¼ö writeRecord()´Â ÇÐ»ý ·¹ÄÚµå ÆÄÀÏ¿¡ ÁÖ¾îÁø rrn¿¡ ÇØ´çÇÏ´Â À§Ä¡¿¡ recordbuf¿¡ 
-// ÀúÀåµÇ¾î ÀÖ´Â ·¹ÄÚµå¸¦ ÀúÀåÇÑ´Ù. ÀÌÀü¿¡ pack() ÇÔ¼ö¸¦ È£ÃâÇÏ¿© recordbuf¿¡ µ¥ÀÌÅÍ¸¦ Ã¤¿ö ³Ö´Â´Ù.
-// ¼º°øÀûÀ¸·Î ¼öÇàÇÏ¸é '1'À», ±×·¸Áö ¾ÊÀ¸¸é '0'À» ¸®ÅÏÇÑ´Ù.
+// ï¿½Ô¼ï¿½ writeRecord()ï¿½ï¿½ ï¿½Ð»ï¿½ ï¿½ï¿½ï¿½Úµï¿½ ï¿½ï¿½ï¿½Ï¿ï¿½ ï¿½Ö¾ï¿½ï¿½ï¿½ rrnï¿½ï¿½ ï¿½Ø´ï¿½ï¿½Ï´ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½ recordbufï¿½ï¿½ 
+// ï¿½ï¿½ï¿½ï¿½Ç¾ï¿½ ï¿½Ö´ï¿½ ï¿½ï¿½ï¿½Úµå¸¦ ï¿½ï¿½ï¿½ï¿½ï¿½Ñ´ï¿½. ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ pack() ï¿½Ô¼ï¿½ï¿½ï¿½ È£ï¿½ï¿½ï¿½Ï¿ï¿½ recordbufï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Í¸ï¿½ Ã¤ï¿½ï¿½ ï¿½Ö´Â´ï¿½.
+// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï¸ï¿½ '1'ï¿½ï¿½, ï¿½×·ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ '0'ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ñ´ï¿½.
 //
 int writeRecord(FILE *fp, const STUDENT *s, int rrn);
 void pack(char *recordbuf, const STUDENT *s);
 
 //
-// ÇÔ¼ö appendRecord()´Â ÇÐ»ý ·¹ÄÚµå ÆÄÀÏ¿¡ »õ·Î¿î ·¹ÄÚµå¸¦ appendÇÑ´Ù.
-// ·¹ÄÚµå ÆÄÀÏ¿¡ ·¹ÄÚµå°¡ ÇÏ³ªµµ Á¸ÀçÇÏÁö ¾Ê´Â °æ¿ì (Ã¹ ¹øÂ° append)´Â header ·¹ÄÚµå¸¦
-// ÆÄÀÏ¿¡ »ý¼ºÇÏ°í Ã¹ ¹øÂ° ·¹ÄÚµå¸¦ ÀúÀåÇÑ´Ù. 
-// ´ç¿¬È÷ ·¹ÄÚµå¸¦ append¸¦ ÇÒ ¶§¸¶´Ù header ·¹ÄÚµå¿¡ ´ëÇÑ ¼öÁ¤ÀÌ µÚµû¶ó¾ß ÇÑ´Ù.
-// ÇÔ¼ö appendRecord()´Â ³»ºÎÀûÀ¸·Î writeRecord() ÇÔ¼ö¸¦ È£ÃâÇÏ¿© ·¹ÄÚµå ÀúÀåÀ» ÇØ°áÇÑ´Ù.
-// ¼º°øÀûÀ¸·Î ¼öÇàÇÏ¸é '1'À», ±×·¸Áö ¾ÊÀ¸¸é '0'À» ¸®ÅÏÇÑ´Ù.
+// ï¿½Ô¼ï¿½ appendRecord()ï¿½ï¿½ ï¿½Ð»ï¿½ ï¿½ï¿½ï¿½Úµï¿½ ï¿½ï¿½ï¿½Ï¿ï¿½ ï¿½ï¿½ï¿½Î¿ï¿½ ï¿½ï¿½ï¿½Úµå¸¦ appendï¿½Ñ´ï¿½.
+// ï¿½ï¿½ï¿½Úµï¿½ ï¿½ï¿½ï¿½Ï¿ï¿½ ï¿½ï¿½ï¿½Úµå°¡ ï¿½Ï³ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ê´ï¿½ ï¿½ï¿½ï¿½ (Ã¹ ï¿½ï¿½Â° append)ï¿½ï¿½ header ï¿½ï¿½ï¿½Úµå¸¦
+// ï¿½ï¿½ï¿½Ï¿ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï°ï¿½ Ã¹ ï¿½ï¿½Â° ï¿½ï¿½ï¿½Úµå¸¦ ï¿½ï¿½ï¿½ï¿½ï¿½Ñ´ï¿½. 
+// ï¿½ç¿¬ï¿½ï¿½ ï¿½ï¿½ï¿½Úµå¸¦ appendï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ header ï¿½ï¿½ï¿½Úµå¿¡ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Úµï¿½ï¿½ï¿½ï¿½ ï¿½Ñ´ï¿½.
+// ï¿½Ô¼ï¿½ appendRecord()ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ writeRecord() ï¿½Ô¼ï¿½ï¿½ï¿½ È£ï¿½ï¿½ï¿½Ï¿ï¿½ ï¿½ï¿½ï¿½Úµï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ø°ï¿½ï¿½Ñ´ï¿½.
+// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï¸ï¿½ '1'ï¿½ï¿½, ï¿½×·ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ '0'ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ñ´ï¿½.
 //
 int appendRecord(FILE *fp, char *id, char *name, char *dept, char *addr, char *email);
 
 //
-// ÇÐ»ý ·¹ÄÚµå ÆÄÀÏ¿¡¼­ °Ë»ö Å°°ªÀ» ¸¸Á·ÇÏ´Â ·¹ÄÚµå°¡ Á¸ÀçÇÏ´ÂÁö¸¦ sequential search ±â¹ýÀ» 
-// ÅëÇØ Ã£¾Æ³»°í, ÀÌ¸¦ ¸¸Á·ÇÏ´Â ¸ðµç ·¹ÄÚµåÀÇ ³»¿ëÀ» Ãâ·ÂÇÑ´Ù. °Ë»ö Å°´Â ÇÐ»ý ·¹ÄÚµå¸¦ ±¸¼ºÇÏ´Â
-// ¾î¶² ÇÊµåµµ °¡´ÉÇÏ´Ù. ³»ºÎÀûÀ¸·Î readRecord() ÇÔ¼ö¸¦ È£ÃâÇÏ¿© sequential search¸¦ ¼öÇàÇÑ´Ù.
-// °Ë»ö °á°ú¸¦ Ãâ·ÂÇÒ ¶§ ¹Ýµå½Ã printRecord() ÇÔ¼ö¸¦ »ç¿ëÇÑ´Ù. (¹Ýµå½Ã ÁöÄÑ¾ß ÇÏ¸ç, ±×·¸Áö
-// ¾Ê´Â °æ¿ì Ã¤Á¡ ÇÁ·Î±×·¥¿¡¼­ ÀÚµ¿ÀûÀ¸·Î Æ²¸° °ÍÀ¸·Î ÀÎ½ÄÇÔ)
+// ï¿½Ð»ï¿½ ï¿½ï¿½ï¿½Úµï¿½ ï¿½ï¿½ï¿½Ï¿ï¿½ï¿½ï¿½ ï¿½Ë»ï¿½ Å°ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½ ï¿½ï¿½ï¿½Úµå°¡ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½ï¿½ï¿½ï¿½ï¿½ sequential search ï¿½ï¿½ï¿½ï¿½ï¿½ 
+// ï¿½ï¿½ï¿½ï¿½ Ã£ï¿½Æ³ï¿½ï¿½ï¿½, ï¿½Ì¸ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Úµï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ñ´ï¿½. ï¿½Ë»ï¿½ Å°ï¿½ï¿½ ï¿½Ð»ï¿½ ï¿½ï¿½ï¿½Úµå¸¦ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½
+// ï¿½î¶² ï¿½Êµåµµ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½. ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ readRecord() ï¿½Ô¼ï¿½ï¿½ï¿½ È£ï¿½ï¿½ï¿½Ï¿ï¿½ sequential searchï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ñ´ï¿½.
+// ï¿½Ë»ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½Ýµï¿½ï¿½ printRecord() ï¿½Ô¼ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ñ´ï¿½. (ï¿½Ýµï¿½ï¿½ ï¿½ï¿½ï¿½Ñ¾ï¿½ ï¿½Ï¸ï¿½, ï¿½×·ï¿½ï¿½ï¿½
+// ï¿½Ê´ï¿½ ï¿½ï¿½ï¿½ Ã¤ï¿½ï¿½ ï¿½ï¿½ï¿½Î±×·ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Úµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Æ²ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Î½ï¿½ï¿½ï¿½)
 //
-void searchRecord(FILE *fp, FIELD f, char *keyval);
+void searchRecord(FILE *fp, enum FIELD f, char *keyval);
 void printRecord(const STUDENT *s);
 
 //
-// ·¹ÄÚµåÀÇ ÇÊµå¸íÀ» enum FIELD Å¸ÀÔÀÇ °ªÀ¸·Î º¯È¯½ÃÄÑ ÁØ´Ù.
-// ¿¹¸¦ µé¸é, »ç¿ëÀÚ°¡ ¼öÇàÇÑ ¸í·É¾îÀÇ ÀÎÀÚ·Î "NAME"ÀÌ¶ó´Â ÇÊµå¸íÀ» »ç¿ëÇÏ¿´´Ù¸é 
-// ÇÁ·Î±×·¥ ³»ºÎ¿¡¼­ ÀÌ¸¦ NAME(=1)À¸·Î º¯È¯ÇÒ ÇÊ¿ä¼ºÀÌ ÀÖÀ¸¸ç, ÀÌ¶§ ÀÌ ÇÔ¼ö¸¦ ÀÌ¿ëÇÑ´Ù.
+// ï¿½ï¿½ï¿½Úµï¿½ï¿½ï¿½ ï¿½Êµï¿½ï¿½ï¿½ï¿½ enum FIELD Å¸ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½È¯ï¿½ï¿½ï¿½ï¿½ ï¿½Ø´ï¿½.
+// ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½, ï¿½ï¿½ï¿½ï¿½Ú°ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½É¾ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ú·ï¿½ "NAME"ï¿½Ì¶ï¿½ï¿½ ï¿½Êµï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ï¿ï¿½ï¿½Ù¸ï¿½ 
+// ï¿½ï¿½ï¿½Î±×·ï¿½ ï¿½ï¿½ï¿½Î¿ï¿½ï¿½ï¿½ ï¿½Ì¸ï¿½ NAME(=1)ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½È¯ï¿½ï¿½ ï¿½Ê¿ä¼ºï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½, ï¿½Ì¶ï¿½ ï¿½ï¿½ ï¿½Ô¼ï¿½ï¿½ï¿½ ï¿½Ì¿ï¿½ï¿½Ñ´ï¿½.
 //
-FIELD getFieldID(char *fieldname);
+enum FIELD getFieldID(char *fieldname);
 
-void main(int argc, char *argv[])
-{
-	FILE *fp;			// ¸ðµç file processing operationÀº C library¸¦ »ç¿ëÇÒ °Í
+void main(int argc, char *argv[]){
+	FILE *fp;			// ï¿½ï¿½ï¿½ file processing operationï¿½ï¿½ C libraryï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½
+	enum FIELD field;
+
+	if(strcmp(argv[1],"-a")&&strcmp(argv[1],"-s")){
+		fprintf(stderr,"usage: %s <option> ...\n",argv[0]);
+		exit(1);
+	}
+	
+	if(!strcmp(argv[1],"-a")&&argc!=8){
+		fprintf(stderr,"usage: %s -a <record_file_name> \"field_value1\" \"field_value2\" \"field_value3\" \"field_value4\" \"field_value5\"\n",argv[0]);
+		exit(1);
+	}
+
+	if(!strcmp(argv[1],"-s")&&argc!=4){
+		fprintf(stderr,"usage: %s -s <record_file_name> \"field_name=field_value\"\n",argv[0]);
+		exit(1);
+	}
+
+	if(!strcmp(argv[1],"-a")){
+		if((fp=fopen(argv[2],"r+"))==NULL){
+			if((fp=fopen(argv[2],"w+"))==NULL){
+				fprintf(stderr,"fopen error\n");
+				exit(1);
+			}
+		}
+		if(!appendRecord(fp,argv[3],argv[4],argv[5],argv[6],argv[7])){
+			printf("appendRecord error\n");
+			exit(1);
+		}
+	}
+
+	if(!strcmp(argv[1],"-s")){
+		if((fp=fopen(argv[2],"r+"))==NULL){
+			fprintf(stderr,"fopen error for %s\n",argv[2]);
+			exit(1);
+		}
+		field=getFieldID(argv[3]);
+		searchRecord(fp,field,argv[3]);
+	}
+
+	fclose(fp);
+	exit(0);
 }
 
-void printRecord(const STUDENT *s)
-{
+int readRecord(FILE *fp, STUDENT *s, int rrn){
+	char recordbuf[RECORD_SIZE];
+	long offset;
+
+	offset=rrn*RECORD_SIZE+HEADER_SIZE;
+	if(fseek(fp,offset,SEEK_SET)!=0){
+		fprintf(stderr,"seek error\n");
+		return 0;
+	}
+	if(fread(recordbuf,sizeof(recordbuf),1,fp)!=1){
+		fprintf(stderr,"read error\n");
+		return 0;
+	}
+	unpack(recordbuf,s);
+	return 1;
+}
+
+void unpack(const char *recordbuf, STUDENT *s){
+	memcpy(s->id,recordbuf,IL);
+	s->id[IL]='\0';
+	memcpy(s->name,recordbuf+1+IL,NL);
+	s->name[NL]='\0';
+	memcpy(s->dept,recordbuf+2+IL+NL,DL);
+	s->dept[DL]='\0';
+	memcpy(s->addr,recordbuf+3+IL+NL+DL,AL);
+	s->addr[AL]='\0';
+	memcpy(s->email,recordbuf+4+IL+NL+DL+AL,EL);
+	s->email[EL]='\0';
+}
+
+int writeRecord(FILE *fp, const STUDENT *s, int rrn){
+	char recordbuf[RECORD_SIZE];
+	long offset;
+
+	pack(recordbuf,s);
+	offset=HEADER_SIZE+rrn*RECORD_SIZE;
+	if(fseek(fp,offset,SEEK_SET)!=0){
+		fprintf(stderr,"seek error\n");
+		return 0;
+	}
+	if(fwrite(recordbuf,sizeof(recordbuf),1,fp)!=1){
+		fprintf(stderr,"write error\n");
+		return 0;
+	}
+
+	return 1;
+}
+
+void pack(char *recordbuf, const STUDENT *s){
+	memcpy(recordbuf,s->id,IL);
+	memcpy(recordbuf+IL,"#",1);
+	memcpy(recordbuf+IL+1,s->name,NL);
+	memcpy(recordbuf+IL+NL+1,"#",1);
+	memcpy(recordbuf+IL+NL+2,s->dept,DL);
+	memcpy(recordbuf+IL+NL+DL+2,"#",1);
+	memcpy(recordbuf+IL+NL+DL+3,s->addr,AL);
+	memcpy(recordbuf+IL+NL+DL+AL+3,"#",1);
+	memcpy(recordbuf+IL+NL+DL+AL+4,s->email,EL);
+	memcpy(recordbuf+IL+NL+DL+AL+EL+4,"#",1);
+}
+
+int appendRecord(FILE *fp, char *id, char *name, char *dept, char *addr, char *email){
+	STUDENT s;
+	char headbuf[HEADER_SIZE];
+	char recordbuf[RECORD_SIZE];
+	int rrn;
+	int fd;
+	char *ptr=NULL;
+
+	fd=fileno(fp);
+	//header ï¿½ï¿½ï¿½ï¿½ ï¿½Ö±ï¿½
+	if(lseek(fd,0,SEEK_END)==0){
+		strcpy(headbuf,"1");
+		rrn=0;
+	}
+	else {
+		lseek(fd,0,SEEK_SET);
+		read(fd,headbuf,HEADER_SIZE);
+		rrn=atoi(headbuf);
+		sprintf(headbuf,"%d",rrn+1);
+	}
+	lseek(fd,0,SEEK_SET);
+	write(fd,headbuf,HEADER_SIZE);
+
+	//ï¿½ï¿½ï¿½ï¿½Ã¼ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+	strcpy(s.id,id);
+	strcpy(s.name,name);
+	strcpy(s.dept,dept);
+	strcpy(s.addr,addr);
+	strcpy(s.email,email);
+		
+	//recordï¿½ï¿½ ï¿½Ö±ï¿½
+	if(!writeRecord(fp,&s,rrn)){
+		printf("writeRecord error\n");
+		return 0;
+	}
+	return 1;
+}
+
+void searchRecord(FILE *fp, enum FIELD f, char *keyval){
+	STUDENT s;
+	char recordbuf[RECORD_SIZE];
+	int rrn=0;
+	int eof;
+	int fd;
+
+	keyval=strstr(keyval,"=")+1;
+	fd=fileno(fp);
+	eof=lseek(fd,0,SEEK_END);
+	lseek(fd,0,SEEK_SET);
+	for(int i=HEADER_SIZE;i<eof;i+=RECORD_SIZE){
+		if(!readRecord(fp,&s,rrn)){
+			printf("none data\n");
+			return;
+		}
+		if(f==ID&&!strcmp(s.id,keyval))
+			printRecord(&s);
+		if(f==NAME&&!strcmp(s.name,keyval))
+			printRecord(&s);
+		if(f==DEPT&&!strcmp(s.dept,keyval))
+			printRecord(&s);
+		if(f==ADDR&&!strcmp(s.addr,keyval))
+			printRecord(&s);
+		if(f==EMAIL&&!strcmp(s.email,keyval))
+			printRecord(&s);
+		rrn++;
+	}
+}
+
+enum FIELD getFieldID(char *fieldname){
+	char *ptr=NULL;
+	if((ptr=strstr(fieldname,"ID"))!=NULL)
+		return ID;
+	if((ptr=strstr(fieldname,"NAME"))!=NULL)
+		return NAME;
+	if((ptr=strstr(fieldname,"DEPT"))!=NULL)
+		return DEPT;
+	if((ptr=strstr(fieldname,"ADDR"))!=NULL)
+		return ADDR;
+	if((ptr=strstr(fieldname,"EMAIL"))!=NULL)
+		return EMAIL;
+}
+
+void printRecord(const STUDENT *s){
 	printf("%s | %s | %s | %s | %s\n", s->id, s->name, s->dept, s->addr, s->email);
 }
+
