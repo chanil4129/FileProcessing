@@ -4,7 +4,7 @@
 #define RECORD_SIZE	85	// id(8) + name(10) + department(12) + address(30) + email(20) + 5*delimiter
 #define HEADER_SIZE	8	// #records(4 bytes) + reserved(4 bytes)
 
-// ÇÊ¿äÇÑ °æ¿ì 'define'À» Ãß°¡ÇÒ ¼ö ÀÖÀ½.
+// ï¿½Ê¿ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ 'define'ï¿½ï¿½ ï¿½ß°ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½.
 #define BUFMAX 1024
 #define IL 8
 #define NL 10
@@ -16,11 +16,11 @@ enum FIELD {ID=0, NAME, DEPT, ADDR, EMAIL};
 
 typedef struct _STUDENT
 {
-	char id[9];		// ÇÐ¹ø
-	char name[11];		// ÀÌ¸§
-	char dept[13];		// ÇÐ°ú
-	char addr[31];		// ÁÖ¼Ò
-	char email[21];		// ÀÌ¸ÞÀÏ ÁÖ¼Ò
+	char id[9];		// ï¿½Ð¹ï¿½
+	char name[11];		// ï¿½Ì¸ï¿½
+	char dept[13];		// ï¿½Ð°ï¿½
+	char addr[31];		// ï¿½Ö¼ï¿½
+	char email[21];		// ï¿½Ì¸ï¿½ï¿½ï¿½ ï¿½Ö¼ï¿½
 } STUDENT;
 
 #endif
