@@ -71,7 +71,7 @@ void main(int argc, char *argv[]){
 	FILE *fp;			// 모든 file processing operation은 C library를 사용할 것
 	enum FIELD field;
 
-	if(strcmp(argv[1],"-a")&&strcmp(argv[1],"-s")){
+	if(strcmp(argv[1],"-a")&&strcmp(argv[1],"-s")&&strcmp(argv[1],"-d")&&strcmp(argv[1],"-i")){
 		fprintf(stderr,"usage: %s <option> ...\n",argv[0]);
 		exit(1);
 	}
@@ -108,9 +108,35 @@ void main(int argc, char *argv[]){
 		searchRecord(fp,field,argv[3]);
 	}
 
+	if(!strcmp(argv[1],"d")){
+		if((fp=fopen(argv[2],"r+"))==NULL){
+			fprintf(stderr,"fopen error for %s\n",argv[2]);
+			exit(1);
+		}
+		field=getFieldID(argv[3]);
+		if(!deleteRecordd(fp,field,argv[3])){
+			printf("deleteRecord error\n");
+			exit(1);
+		}
+	}
+
+	if(!strcmp(argv[1],"i")){
+		if((fp=fopen(argv[2],"w+"))==NULL){
+			fprintf(stderr,"fopen error for %s\n",argv[2]);
+			exit(1);
+		}
+		if(!insertRecord(fp,argv[3],argv[4],argv[5],argv[6],argv[7])){
+			printf("insertRecord error\n");
+			exit(1);
+		}
+	}
+
+			
+
 	fclose(fp);
 	exit(0);
 }
+
 int readRecord(FILE *fp, STUDENT *s, int rrn){
 	char recordbuf[RECORD_SIZE];
 	long offset;
@@ -174,7 +200,8 @@ void pack(char *recordbuf, const STUDENT *s){
 
 int appendRecord(FILE *fp, char *id, char *name, char *dept, char *addr, char *email){
 	STUDENT s;
-	char headbuf[HEADER_SIZE];
+	char records[HEADER_SIZE/2];
+	char reserved[HEADER_SIZE/2];
 	char recordbuf[RECORD_SIZE];
 	int rrn;
 	int fd;
@@ -183,17 +210,19 @@ int appendRecord(FILE *fp, char *id, char *name, char *dept, char *addr, char *e
 	fd=fileno(fp);
 	//header 정보 넣기
 	if(lseek(fd,0,SEEK_END)==0){
-		strcpy(headbuf,"1");
+		strcpy(records,"1");
+		strcpy(reserved,"-1");
 		rrn=0;
 	}
 	else {
 		lseek(fd,0,SEEK_SET);
-		read(fd,headbuf,HEADER_SIZE);
-		rrn=atoi(headbuf);
-		sprintf(headbuf,"%d",rrn+1);
+		read(fd,records,HEADER_SIZE/2);
+		rrn=atoi(records);
+		sprintf(records,"%d",rrn+1);
 	}
 	lseek(fd,0,SEEK_SET);
-	write(fd,headbuf,HEADER_SIZE);
+	write(fd,records,HEADER_SIZE/2);
+	write(fd,reserved,HEADER_SIZE/2);
 
 	//구조체에 데이터 삽입
 	strcpy(s.id,id);
@@ -238,6 +267,12 @@ void searchRecord(FILE *fp, enum FIELD f, char *keyval){
 			printRecord(&s);
 		rrn++;
 	}
+}
+
+int deleteRecord(FILE *fp, enum FIELD f, char *keyval){
+}
+
+int insertRecord(FILE *fp, char *id, char *name, char *dept, char *addr, char *email){
 }
 
 enum FIELD getFieldID(char *fieldname){
