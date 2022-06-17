@@ -7,13 +7,13 @@
 // 각 필드값을 저장한다. 성공하면 1을 그렇지 않으면 0을 리턴한다.
 // unpack() 함수는 recordbuf에 저장되어 있는 record에서 각 field를 추출하는 일을 한다.
 //
-int readRecord((FILE *fp, STUDENT *s, int rrn);
+int readRecord(FILE *fp, STUDENT *s, int rrn);
 void unpack(const char *recordbuf, STUDENT *s);
 
 //
 // 함수 writeRecord()는 학생 레코드 파일에 주어진 rrn에 해당하는 위치에 recordbuf에 
 // 저장되어 있는 레코드를 저장한다. 이전에 pack() 함수를 호출하여 recordbuf에 데이터를 채워 넣는다.
-// 성공적으로 수행하면 '1'을, 그렇지 않으면 '0'을 리턴한다.
+// 성공적으로 수행하면 '1'을, 그aa렇지 않으면 '0'을 리턴한다.
 //
 int writeRecord(FILE *fp, const STUDENT *s, int rrn);
 void pack(char *recordbuf, const STUDENT *s);
@@ -44,23 +44,6 @@ void printRecord(const STUDENT *s);
 // 프로그램 내부에서 이를 NAME(=1)으로 변환할 필요성이 있으며, 이때 이 함수를 이용한다.
 //
 enum FIELD getFieldID(char *fieldname);
-
-
-//
-// 학생 레코드 파일에서 "학번" 키값을 만족하는 레코드를 찾아서 이것을 삭제한다.
-// 참고로, 검색 조건은 반드시 학번(ID)만을 사용한다. 레코드의 검색은 searchRecord() 함수와
-// 유사한 방식으로 구현한다. 성공적으로 수행하면 '1'을, 그렇지 않으면 '0'을 리턴한다.
-//
-int deleteRecord(FILE *fp, enum FIELD f, char *keyval);
-
-//
-// 학생 레코드 파일에 새로운 레코드를 추가한다. 과제 설명서에서 언급한 대로, 삭제 레코드가
-// 존재하면 반드시 삭제 레코드들 중 하나에 새로운 레코드를 저장한다. 삭제 레코드 리스트 관리와
-// 삭제 레코드의 선택은 교재 방식을 따른다. 새로운 레코드의 추가는 appendRecord() 함수와 비슷한
-// 방식으로 구현한다. 성공적으로 수행하면 '1'을, 그렇지 않으면 '0'을 리턴한다.
-//
-int insertRecord(FILE *fp, char *id, char *name, char *dept, char *addr, char *email);
-
 
 void main(int argc, char *argv[])
 {
