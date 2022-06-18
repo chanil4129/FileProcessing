@@ -66,7 +66,6 @@ int deleteRecord(FILE *fp, enum FIELD f, char *keyval);
 //
 int insertRecord(FILE *fp, char *id, char *name, char *dept, char *addr, char *email);
 
-
 void main(int argc, char *argv[]){
 	FILE *fp;			// 모든 file processing operation은 C library를 사용할 것
 	enum FIELD field;
@@ -108,22 +107,24 @@ void main(int argc, char *argv[]){
 		searchRecord(fp,field,argv[3]);
 	}
 
-	if(!strcmp(argv[1],"d")){
+	if(!strcmp(argv[1],"-d")){
 		if((fp=fopen(argv[2],"r+"))==NULL){
 			fprintf(stderr,"fopen error for %s\n",argv[2]);
 			exit(1);
 		}
 		field=getFieldID(argv[3]);
-		if(!deleteRecordd(fp,field,argv[3])){
+		if(!deleteRecord(fp,field,argv[3])){
 			printf("deleteRecord error\n");
 			exit(1);
 		}
 	}
 
-	if(!strcmp(argv[1],"i")){
-		if((fp=fopen(argv[2],"w+"))==NULL){
-			fprintf(stderr,"fopen error for %s\n",argv[2]);
-			exit(1);
+	if(!strcmp(argv[1],"-i")){
+		if((fp=fopen(argv[2],"r+"))==NULL){
+			if((fp=fopen(argv[2],"w+"))==NULL){
+				fprintf(stderr,"fopen error for %s\n",argv[2]);
+				exit(1);
+			}
 		}
 		if(!insertRecord(fp,argv[3],argv[4],argv[5],argv[6],argv[7])){
 			printf("insertRecord error\n");
@@ -186,6 +187,7 @@ int writeRecord(FILE *fp, const STUDENT *s, int rrn){
 }
 
 void pack(char *recordbuf, const STUDENT *s){
+//	memset(recordbuf,0,RECORD_SIZE);
 	memcpy(recordbuf,s->id,IL);
 	memcpy(recordbuf+IL,"#",1);
 	memcpy(recordbuf+IL+1,s->name,NL);
@@ -201,7 +203,7 @@ void pack(char *recordbuf, const STUDENT *s){
 int appendRecord(FILE *fp, char *id, char *name, char *dept, char *addr, char *email){
 	STUDENT s;
 	char records[HEADER_SIZE/2];
-	char reserved[HEADER_SIZE/2];
+	int reserved;
 	char recordbuf[RECORD_SIZE];
 	int rrn;
 	int fd;
@@ -211,7 +213,9 @@ int appendRecord(FILE *fp, char *id, char *name, char *dept, char *addr, char *e
 	//header 정보 넣기
 	if(lseek(fd,0,SEEK_END)==0){
 		strcpy(records,"1");
-		strcpy(reserved,"-1");
+		reserved=-1;
+		lseek(fd,HEADER_SIZE/2,SEEK_SET);
+		write(fd,(int *)&reserved,sizeof(reserved));
 		rrn=0;
 	}
 	else {
@@ -222,7 +226,6 @@ int appendRecord(FILE *fp, char *id, char *name, char *dept, char *addr, char *e
 	}
 	lseek(fd,0,SEEK_SET);
 	write(fd,records,HEADER_SIZE/2);
-	write(fd,reserved,HEADER_SIZE/2);
 
 	//구조체에 데이터 삽입
 	strcpy(s.id,id);
@@ -245,16 +248,19 @@ void searchRecord(FILE *fp, enum FIELD f, char *keyval){
 	int rrn=0;
 	int eof;
 	int fd;
+	int temp;
 
 	keyval=strstr(keyval,"=")+1;
 	fd=fileno(fp);
 	eof=lseek(fd,0,SEEK_END);
 	lseek(fd,0,SEEK_SET);
+
 	for(int i=HEADER_SIZE;i<eof;i+=RECORD_SIZE){
 		if(!readRecord(fp,&s,rrn)){
 			printf("none data\n");
 			return;
 		}
+//		printRecord(&s);
 		if(f==ID&&!strcmp(s.id,keyval))
 			printRecord(&s);
 		if(f==NAME&&!strcmp(s.name,keyval))
@@ -270,9 +276,101 @@ void searchRecord(FILE *fp, enum FIELD f, char *keyval){
 }
 
 int deleteRecord(FILE *fp, enum FIELD f, char *keyval){
+	STUDENT s;
+	char recordbuf[RECORD_SIZE];
+	int reserved;
+	int rrn=0;
+	int del_rrn=-1;
+	int eof;
+	
+	keyval=strstr(keyval,"=")+1;
+	fseek(fp,0,SEEK_END);
+	eof=ftell(fp);
+	fseek(fp,HEADER_SIZE/2,SEEK_SET);
+
+	if(fread((int *)&reserved,sizeof(reserved),1,fp)!=1){
+		fprintf(stderr,"read error\n");
+		return 0;
+	}
+	
+	fseek(fp,0,SEEK_SET);
+	for(int i=HEADER_SIZE;i<eof;i+=RECORD_SIZE){
+		if(!readRecord(fp,&s,rrn)){
+			printf("none data\n");
+			return 0;
+		}
+		if(f==ID&&!strcmp(s.id,keyval)){
+			sprintf(s.id,"*%d",reserved);
+			strcpy(s.name,"\0");
+			strcpy(s.dept,"\0");
+			strcpy(s.addr,"\0");
+			strcpy(s.email,"\0");
+			if(!writeRecord(fp,&s,rrn)){
+				printf("writeRecord error\n");
+				return 0;
+			}
+			reserved=rrn;
+			fseek(fp,HEADER_SIZE/2,SEEK_SET);
+			fwrite((int *)&reserved,sizeof(reserved),1,fp);
+			return 1;
+		}
+		rrn++;
+	}
+
 }
 
 int insertRecord(FILE *fp, char *id, char *name, char *dept, char *addr, char *email){
+	STUDENT s;
+	STUDENT del_s;
+	char recordbuf[RECORD_SIZE];
+	char rrn_buf[HEADER_SIZE/2];
+	char delbuf;
+	int reserved;
+	int rrn=0;
+	char *ptr=NULL;
+
+	fseek(fp,0,SEEK_END);
+	if(ftell(fp)==0){
+		if(appendRecord(fp,id,name,dept,addr,email)==0){
+			printf("insert error\n");
+			return 0;
+		}
+		return 1;
+	}
+	
+	fseek(fp,HEADER_SIZE/2,SEEK_SET);
+	if(fread((int *)&reserved,sizeof(reserved),1,fp)!=1){
+		fprintf(stderr,"fread error\n");
+		return 0;
+	}
+
+	if(reserved==-1){
+		if(appendRecord(fp,id,name,dept,addr,email)==0){
+			printf("insert error\n");
+			return 0;
+		}
+		return 1;
+	}
+	else{
+		if(!readRecord(fp,&s,reserved)){
+			printf("readRecord error\n");
+			return 0;
+		}
+		ptr=s.id+1;
+		rrn=atoi(ptr);
+		fseek(fp,HEADER_SIZE/2,SEEK_SET);
+		fwrite((int *)&rrn,sizeof(rrn),1,fp);
+		strcpy(s.id,id);
+		strcpy(s.name,name);
+		strcpy(s.dept,dept);
+		strcpy(s.addr,addr);
+		strcpy(s.email,email);
+		if(!writeRecord(fp,&s,reserved)){
+			printf("writeRecord error\n");
+			return 0;
+		}
+	}
+	return 1;
 }
 
 enum FIELD getFieldID(char *fieldname){
