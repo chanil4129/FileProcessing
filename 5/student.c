@@ -256,7 +256,7 @@ void searchRecord(FILE *fp, enum FIELD f, char *keyval){
 	lseek(fd,0,SEEK_SET);
 
 	for(int i=HEADER_SIZE;i<eof;i+=RECORD_SIZE){
-		if(!readRecord(fp,&s,rrn)){
+		if(!readRecord(fp,&s,rrn++)){
 			printf("none data\n");
 			return;
 		}
@@ -273,7 +273,6 @@ void searchRecord(FILE *fp, enum FIELD f, char *keyval){
 			printRecord(&s);
 		if(f==EMAIL&&!strcmp(s.email,keyval))
 			printRecord(&s);
-		rrn++;
 	}
 }
 

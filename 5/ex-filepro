@@ -12,10 +12,23 @@
 ./a.out -d records.dat "ID=21084555"
 ./a.out -d records.dat "ID=32154674"
 ./a.out -d records.dat "ID=78978971"
+
+
+./a.out -s records.dat "ID=21084555"
+./a.out -s records.dat "ID=32154674"
+./a.out -s records.dat "ID=78978971"
+./a.out -s records.dat "ID=20182601"
+./a.out -s records.dat "ID=12347579"
+./a.out -s records.dat "ID=45257857"
+
 ./a.out -d records.dat "ID=20182601"
 ./a.out -d records.dat "ID=12347579"
 ./a.out -d records.dat "ID=45257857"
 
 ./a.out -i records.dat "99999999" "ksdfjlk" "dd" "Nowson" "chanil@naver"
 ./a.out -i records.dat "12345967" "ksdfjlk" "dd" "Nowson" "chanil@naver"
+
+./a.out -s records.dat "ID=99999999"
+./a.out -s records.dat "ID=12345967"
+
 
