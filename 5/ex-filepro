@@ -1,0 +1,21 @@
+./a.out -a records.dat "20182601" "gildong" "computer" "sgsg" "chanil@naver"
+./a.out -a records.dat "21084555" "chan" "art" "ddddddd" "cddfasdfaver"
+./a.out -i records.dat "12347579" "il" "computer" "Nowon" "chanil@naver"
+./a.out -a records.dat "45257857" "hi" "art" "gdgsdg" "chanil@naver"
+./a.out -i records.dat "32154674" "thehe" "computer" "Nowson" "chanil@naver"
+./a.out -a records.dat "78978971" "ghekek" "computer" "dd" "chanil@naver"
+
+
+
+./a.out -s records.dat "ID=20182601"
+
+./a.out -d records.dat "ID=21084555"
+./a.out -d records.dat "ID=32154674"
+./a.out -d records.dat "ID=78978971"
+./a.out -d records.dat "ID=20182601"
+./a.out -d records.dat "ID=12347579"
+./a.out -d records.dat "ID=45257857"
+
+./a.out -i records.dat "99999999" "ksdfjlk" "dd" "Nowson" "chanil@naver"
+./a.out -i records.dat "12345967" "ksdfjlk" "dd" "Nowson" "chanil@naver"
+

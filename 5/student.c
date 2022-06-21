@@ -187,7 +187,7 @@ int writeRecord(FILE *fp, const STUDENT *s, int rrn){
 }
 
 void pack(char *recordbuf, const STUDENT *s){
-//	memset(recordbuf,0,RECORD_SIZE);
+	memset(recordbuf,0,RECORD_SIZE);
 	memcpy(recordbuf,s->id,IL);
 	memcpy(recordbuf+IL,"#",1);
 	memcpy(recordbuf+IL+1,s->name,NL);
@@ -260,6 +260,8 @@ void searchRecord(FILE *fp, enum FIELD f, char *keyval){
 			printf("none data\n");
 			return;
 		}
+		if(s.id[0]=='*')
+			continue;
 //		printRecord(&s);
 		if(f==ID&&!strcmp(s.id,keyval))
 			printRecord(&s);
@@ -301,10 +303,10 @@ int deleteRecord(FILE *fp, enum FIELD f, char *keyval){
 		}
 		if(f==ID&&!strcmp(s.id,keyval)){
 			sprintf(s.id,"*%d",reserved);
-			strcpy(s.name,"\0");
-			strcpy(s.dept,"\0");
-			strcpy(s.addr,"\0");
-			strcpy(s.email,"\0");
+//			strcpy(s.name,"\0");
+//			strcpy(s.dept,"\0");
+//			strcpy(s.addr,"\0");
+//			strcpy(s.email,"\0");
 			if(!writeRecord(fp,&s,rrn)){
 				printf("writeRecord error\n");
 				return 0;
@@ -316,6 +318,7 @@ int deleteRecord(FILE *fp, enum FIELD f, char *keyval){
 		}
 		rrn++;
 	}
+	return 1;
 
 }
 
